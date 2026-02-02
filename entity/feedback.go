@@ -11,7 +11,7 @@ type Feedback struct {
 	UserID     uuid.UUID `json:"user_id" gorm:"type:varchar(36);not null"`
 	CanteenID  uuid.UUID `json:"canteen_id" gorm:"type:varchar(36);not null"`
 	OrderID    uuid.UUID `json:"order_id" gorm:"type:varchar(36);not null"`
-	Rating     int       `json:"rating" gorm:"not null" validate:"min=1,max=5"`
+	Rating     int       `json:"rating" gorm:"not null"`
 	Comment    string    `json:"comment" gorm:"type:text"`
 	CreatedAt  time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt  time.Time `json:"updated_at" gorm:"autoUpdateTime"`
