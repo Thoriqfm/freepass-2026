@@ -7,6 +7,7 @@ import (
 	"freepass-2026/model"
 	"freepass-2026/pkg/bcrypt"
 	"freepass-2026/pkg/database"
+	"freepass-2026/pkg/jwt"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -14,19 +15,23 @@ import (
 
 type IUserService interface {
 	Register(param model.UserRegisterParam) error
+	GetUser(param model.UserParam) (*entity.User, error)
+	Login(param model.UserLoginParam) (*model.UserLoginResponse, error)
 }
 
 type UserService struct {
 	db             *gorm.DB
 	userRepository repository.IUserRepository
 	bcrypt         bcrypt.Interface
+	jwtAuth        jwt.Interface
 }
 
-func NewUserService(userRepository repository.IUserRepository, bcrypt bcrypt.Interface) IUserService {
+func NewUserService(userRepository repository.IUserRepository, bcrypt bcrypt.Interface, jwtAuth jwt.Interface) IUserService {
 	return &UserService{
 		db:             database.Connection,
 		userRepository: userRepository,
 		bcrypt:         bcrypt,
+		jwtAuth:        jwtAuth,
 	}
 }
 
@@ -76,4 +81,37 @@ func (u *UserService) Register(param model.UserRegisterParam) error {
 	}
 	return nil
 
+}
+
+func (u *UserService) GetUser(param model.UserParam) (*entity.User, error) {
+	return u.userRepository.GetUser(param)
+}
+
+func (u *UserService) Login(param model.UserLoginParam) (*model.UserLoginResponse, error) {
+	tx := u.db.Begin()
+	defer tx.Rollback()
+
+	user, err := u.userRepository.GetUser(model.UserParam{
+		Email: param.Email,
+	})
+	if err != nil {
+		return nil, errors.New("email or password is wrong")
+	}
+
+	err = u.bcrypt.CompareAndHashPassword(user.Password, param.Password)
+	if err != nil {
+		return nil, errors.New("email or password is wrong")
+	}
+
+	token, err := u.jwtAuth.CreateJWTToken(user.UserID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.UserLoginResponse{
+		Token:  token,
+		RoleID: user.RoleID,
+	}
+
+	return response, nil
 }

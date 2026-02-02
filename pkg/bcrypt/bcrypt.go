@@ -4,6 +4,7 @@ import lib_bcrypt "golang.org/x/crypto/bcrypt"
 
 type Interface interface {
 	GenerateFromPassword(password string) (string, error)
+	CompareAndHashPassword(hashPassword string, password string) error
 }
 
 type bcrypt struct {

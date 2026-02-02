@@ -18,5 +18,14 @@ type UserRegisterParam struct {
 }
 
 type UserRegisterResponse struct {
-	
+}
+
+type UserLoginParam struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type UserLoginResponse struct {
+	Token  string `json:"token"`
+	RoleID int    `json:"role_id"`
 }

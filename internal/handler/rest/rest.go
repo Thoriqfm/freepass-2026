@@ -3,20 +3,23 @@ package rest
 import (
 	"fmt"
 	"freepass-2026/internal/service"
+	"freepass-2026/pkg/middleware"
 	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Rest struct {
-	router  *gin.Engine
-	service *service.Service
+	router     *gin.Engine
+	service    *service.Service
+	middleware middleware.Interface
 }
 
-func NewRest(service *service.Service) *Rest {
+func NewRest(service *service.Service, middleware middleware.Interface) *Rest {
 	return &Rest{
-		router:  gin.Default(),
-		service: service,
+		router:     gin.Default(),
+		service:    service,
+		middleware: middleware,
 	}
 }
 
@@ -25,6 +28,7 @@ func (r *Rest) MountEndPoint() {
 
 	auth := baseURL.Group("/auth")
 	auth.POST("/register", r.RegisterHandler)
+	auth.POST("/login", r.LoginUser)
 }
 
 func (r *Rest) Run() {

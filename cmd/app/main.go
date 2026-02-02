@@ -7,6 +7,8 @@ import (
 	"freepass-2026/pkg/bcrypt"
 	"freepass-2026/pkg/config"
 	"freepass-2026/pkg/database"
+	"freepass-2026/pkg/jwt"
+	"freepass-2026/pkg/middleware"
 	"log"
 )
 
@@ -25,8 +27,10 @@ func main() {
 
 	repo := repository.NewRepository(db)
 	bcrypt := bcrypt.Init()
-	svc := service.NewService(repo, bcrypt)
-	r := rest.NewRest(svc)
+	jwtAuth := jwt.Init()
+	svc := service.NewService(repo, bcrypt, jwtAuth)
+	middleware := middleware.Init(svc, jwtAuth)
+	r := rest.NewRest(svc, middleware)
 	r.MountEndPoint()
 	r.Run()
 }
