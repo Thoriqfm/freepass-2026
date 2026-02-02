@@ -18,6 +18,8 @@ type IUserService interface {
 	GetUser(param model.UserParam) (*entity.User, error)
 	Login(param model.UserLoginParam) (*model.UserLoginResponse, error)
 	GetUserProfile(userID uuid.UUID) (*model.UserProfile, error)
+	UpdateUserProfile(userId uuid.UUID, param model.UpdateUserProfile) (*model.UserProfile, error)
+	LoginAdmin(param model.UserLoginParam) (*model.UserLoginResponse, error)
 }
 
 type UserService struct {
@@ -129,6 +131,74 @@ func (u *UserService) GetUserProfile(userID uuid.UUID) (*model.UserProfile, erro
 		Name:  user.Name,
 		Email: user.Email,
 		Phone: user.Phone,
+	}
+
+	return response, nil
+}
+
+func (u *UserService) UpdateUserProfile(userId uuid.UUID, param model.UpdateUserProfile) (*model.UserProfile, error) {
+	tx := u.db.Begin()
+	defer tx.Rollback()
+
+	user, err := u.userRepository.GetUserByID(tx, userId)
+	if err != nil {
+		return nil, errors.New("failed to get user data")
+	}
+
+	user.Name = param.Name
+	user.Phone = param.Phone
+
+	err = u.userRepository.UpdateUserProfile(tx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.UserProfile{
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
+	}, nil
+
+}
+
+/*
+* ADMIN FEATURES
+ */
+
+func (u *UserService) LoginAdmin(param model.UserLoginParam) (*model.UserLoginResponse, error) {
+	tx := u.db.Begin()
+	defer tx.Rollback()
+
+	user, err := u.userRepository.GetUser(model.UserParam{
+		Email: param.Email,
+	})
+	if err != nil {
+		return nil, errors.New("email or password is wrong")
+	}
+
+	// validate for admin role (1)
+	if user.RoleID != 1 {
+		return nil, errors.New("access denied: admin only")
+	}
+
+	err = u.bcrypt.CompareAndHashPassword(user.Password, param.Password)
+	if err != nil {
+		return nil, errors.New("email or password is wrong")
+	}
+
+	token, err := u.jwtAuth.CreateJWTToken(user.UserID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.UserLoginResponse{
+		Token:  token,
+		RoleID: user.RoleID,
 	}
 
 	return response, nil

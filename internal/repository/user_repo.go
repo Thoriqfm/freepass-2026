@@ -4,12 +4,15 @@ import (
 	"freepass-2026/entity"
 	"freepass-2026/model"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type IUserRepository interface {
 	CreateUser(tx *gorm.DB, user *entity.User) error
 	GetUser(param model.UserParam) (*entity.User, error)
+	GetUserByID(tx *gorm.DB, id uuid.UUID) (*entity.User, error)
+	UpdateUserProfile(tx *gorm.DB, user *entity.User) error
 }
 
 type UserRepository struct {
@@ -36,4 +39,23 @@ func (r *UserRepository) GetUser(param model.UserParam) (*entity.User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (r *UserRepository) GetUserByID(tx *gorm.DB, id uuid.UUID) (*entity.User, error) {
+	var user entity.User
+	err := tx.Where("user_id = ?", id).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepository) UpdateUserProfile(tx *gorm.DB, user *entity.User) error {
+	err := tx.Save(user).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

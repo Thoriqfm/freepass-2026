@@ -29,10 +29,13 @@ func (r *Rest) MountEndPoint() {
 	auth := baseURL.Group("/auth")
 	auth.POST("/register", r.RegisterHandler)
 	auth.POST("/login", r.LoginUser)
+	auth.POST("/login/admin", r.LoginAdmin)
 
 	user := baseURL.Group("/user")
 	user.Use(r.middleware.AuthenticateUser)
 	user.GET("/profile", r.GetUserProfile)
+	user.PUT("/profile/update", r.UpdateProfile)
+
 }
 
 func (r *Rest) Run() {

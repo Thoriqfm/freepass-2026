@@ -35,3 +35,8 @@ type UserProfile struct {
 	Email string `json:"email"`
 	Phone string `json:"phone"`
 }
+
+type UpdateUserProfile struct {
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+}
