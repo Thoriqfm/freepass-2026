@@ -29,3 +29,9 @@ type UserLoginResponse struct {
 	Token  string `json:"token"`
 	RoleID int    `json:"role_id"`
 }
+
+type UserProfile struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+}

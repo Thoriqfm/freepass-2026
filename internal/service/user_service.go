@@ -17,6 +17,7 @@ type IUserService interface {
 	Register(param model.UserRegisterParam) error
 	GetUser(param model.UserParam) (*entity.User, error)
 	Login(param model.UserLoginParam) (*model.UserLoginResponse, error)
+	GetUserProfile(userID uuid.UUID) (*model.UserProfile, error)
 }
 
 type UserService struct {
@@ -111,6 +112,23 @@ func (u *UserService) Login(param model.UserLoginParam) (*model.UserLoginRespons
 	response := &model.UserLoginResponse{
 		Token:  token,
 		RoleID: user.RoleID,
+	}
+
+	return response, nil
+}
+
+func (u *UserService) GetUserProfile(userID uuid.UUID) (*model.UserProfile, error) {
+	user, err := u.userRepository.GetUser(model.UserParam{
+		UserID: userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.UserProfile{
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
 	}
 
 	return response, nil
