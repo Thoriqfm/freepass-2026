@@ -20,6 +20,7 @@ type IUserService interface {
 	GetUserProfile(userID uuid.UUID) (*model.UserProfile, error)
 	UpdateUserProfile(userId uuid.UUID, param model.UpdateUserProfile) (*model.UserProfile, error)
 	LoginAdmin(param model.UserLoginParam) (*model.UserLoginResponse, error)
+	LoginOwner(param model.UserLoginParam) (*model.UserLoginResponse, error)
 }
 
 type UserService struct {
@@ -184,6 +185,41 @@ func (u *UserService) LoginAdmin(param model.UserLoginParam) (*model.UserLoginRe
 	// validate for admin role (1)
 	if user.RoleID != 1 {
 		return nil, errors.New("access denied: admin only")
+	}
+
+	err = u.bcrypt.CompareAndHashPassword(user.Password, param.Password)
+	if err != nil {
+		return nil, errors.New("email or password is wrong")
+	}
+
+	token, err := u.jwtAuth.CreateJWTToken(user.UserID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.UserLoginResponse{
+		Token:  token,
+		RoleID: user.RoleID,
+	}
+
+	return response, nil
+}
+
+/*
+* OWNER FEATURES
+ */
+
+func (u *UserService) LoginOwner(param model.UserLoginParam) (*model.UserLoginResponse, error) {
+	user, err := u.userRepository.GetUser(model.UserParam{
+		Email: param.Email,
+	})
+	if err != nil {
+		return nil, errors.New("email or password is wrong")
+	}
+
+	// Validate owner role (3)
+	if user.RoleID != 3 {
+		return nil, errors.New("access denied: owner only")
 	}
 
 	err = u.bcrypt.CompareAndHashPassword(user.Password, param.Password)

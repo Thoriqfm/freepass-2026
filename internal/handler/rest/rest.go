@@ -30,6 +30,7 @@ func (r *Rest) MountEndPoint() {
 	auth.POST("/register", r.RegisterHandler)
 	auth.POST("/login", r.LoginUser)
 	auth.POST("/login/admin", r.LoginAdmin)
+	auth.POST("/login/owner", r.LoginOwner)
 
 	user := baseURL.Group("/user")
 	user.Use(r.middleware.AuthenticateUser)

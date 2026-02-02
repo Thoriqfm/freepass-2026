@@ -131,3 +131,34 @@ func (r *Rest) LoginAdmin(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, "admin logged in successfully", reps)
 }
+
+/*
+* OWNER FEATURES
+ */
+
+func (r *Rest) LoginOwner(c *gin.Context) {
+	var param model.UserLoginParam
+
+	err := c.ShouldBindJSON(&param)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	reps, err := r.service.UserService.LoginOwner(param)
+	if err != nil {
+		switch err.Error() {
+		case "email or password is wrong":
+			response.Error(c, http.StatusUnauthorized, "email or password is wrong", err)
+			return
+		case "access denied: owner only":
+			response.Error(c, http.StatusForbidden, "access denied: owner only", err)
+			return
+		default:
+			response.Error(c, http.StatusInternalServerError, "failed to login owner", err)
+			return
+		}
+	}
+
+	response.Success(c, http.StatusOK, "owner logged in successfully", reps)
+}
