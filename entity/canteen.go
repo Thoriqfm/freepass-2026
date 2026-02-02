@@ -18,6 +18,4 @@ type Canteen struct {
 	Menus     []Menu     `json:"menus" gorm:"foreignKey:CanteenID"`
 	Orders    []Order    `json:"orders" gorm:"foreignKey:CanteenID"`
 	Feedbacks []Feedback `json:"feedbacks" gorm:"foreignKey:CanteenID"`
-
-	// OwnerID uuid.UUID `json:"owner_id" gorm:"type:varchar(36);not null;foreignKey:UserID;references:UserID"`
 }

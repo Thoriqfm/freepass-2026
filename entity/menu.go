@@ -18,6 +18,4 @@ type Menu struct {
 	UpdatedAt   time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
 	OrderItems []OrderItem `json:"order_items" gorm:"foreignKey:MenuID"`
-
-	// CanteenID uuid.UUID `json:"canteen_id" gorm:"type:varchar(36);not null;foreignKey:CanteenID;references:CanteenID"`
 }

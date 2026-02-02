@@ -9,7 +9,4 @@ type OrderItem struct {
 	Quantity    int       `json:"quantity" gorm:"not null"`
 	Price       int       `json:"price" gorm:"not null"`
 	Subtotal    int       `json:"subtotal" gorm:"not null"`
-
-	// OrderID uuid.UUID `json:"order_id" gorm:"type:varchar(36);not null;foreignKey:OrderID;references:OrderID"`
-	// MenuID  uuid.UUID `json:"menu_id" gorm:"type:varchar(36);not null;foreignKey:MenuID;references:MenuID"`
 }

@@ -19,7 +19,4 @@ type Order struct {
 	OrderItems []OrderItem `json:"order_items" gorm:"foreignKey:OrderID"`
 	Payment    []Payment   `json:"payment" gorm:"foreignKey:OrderID"`
 	Feedbacks  []Feedback  `json:"feedbacks" gorm:"foreignKey:OrderID"`
-
-	// UserID    string `json:"user_id" gorm:"type:varchar(36);not null;foreignKey:UserID;references:UserID"`
-	// CanteenID string `json:"canteen_id" gorm:"type:varchar(36);not null;foreignKey:CanteenID;references:CanteenID"`
 }
