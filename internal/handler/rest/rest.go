@@ -43,6 +43,9 @@ func (r *Rest) MountEndPoint() {
 	admin.PUT("/canteen-owner/:owner_id/update", r.UpdateCanteenOwnerProfile)
 	admin.DELETE("/delete-user/:user_id", r.DeleteUser)
 
+	owner := baseURL.Group("/owner")
+	owner.Use(r.middleware.AuthenticateUser, r.middleware.OnlyOwner)
+
 }
 
 func (r *Rest) Run() {

@@ -10,6 +10,7 @@ import (
 type Interface interface {
 	OnlyAdmin(c *gin.Context)
 	AuthenticateUser(c *gin.Context)
+	OnlyOwner(c *gin.Context)
 }
 
 type middleware struct {

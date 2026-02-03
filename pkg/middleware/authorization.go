@@ -24,3 +24,20 @@ func (m *middleware) OnlyAdmin(c *gin.Context) {
 
 	c.Next()
 }
+
+func (m *middleware) OnlyOwner(c *gin.Context) {
+	user, err := m.jwtAuth.GetLoginUser(c)
+	if err != nil {
+		response.Error(c, http.StatusForbidden, "failed to get user", err)
+		c.Abort()
+		return
+	}
+
+	if user.RoleID != 3 {
+		response.Error(c, http.StatusForbidden, "this endpoint cant be access", errors.New("user dont have access"))
+		c.Abort()
+		return
+	}
+
+	c.Next()
+}
