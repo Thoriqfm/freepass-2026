@@ -15,6 +15,7 @@ type IMenuService interface {
 	GetMenusByCanteen(ownerID uuid.UUID, canteenID uuid.UUID) (*model.MenuListResponse, error)
 	GetMenuByMenuID(ownerID uuid.UUID, menuID uuid.UUID) (*model.MenuResponse, error)
 	UpdateMenu(ownerID uuid.UUID, menuID uuid.UUID, param model.UpdateMenuParam) (*model.UpdateMenuResponse, error)
+	DeleteMenu(ownerID uuid.UUID, menuID uuid.UUID) (*model.DeleteMenuResponse, error)
 }
 
 type MenuService struct {
@@ -210,5 +211,40 @@ func (m *MenuService) UpdateMenu(ownerID uuid.UUID, menuID uuid.UUID, param mode
 		IsAvailable: menu.IsAvailable,
 		UpdatedAt:   menu.UpdatedAt,
 	}
+	return response, nil
+}
+
+func (m *MenuService) DeleteMenu(ownerID uuid.UUID, menuID uuid.UUID) (*model.DeleteMenuResponse, error) {
+	tx := m.db.Begin()
+	defer tx.Rollback()
+
+	menu, err := m.menuRepository.GetMenuByID(tx, menuID)
+	if err != nil {
+		return nil, errors.New("menu not found")
+	}
+
+	canteen, err := m.canteenRepository.GetCanteenByID(tx, menu.CanteenID)
+	if err != nil {
+		return nil, errors.New("canteen not found")
+	}
+	if canteen.OwnerID != ownerID {
+		return nil, errors.New("access denied: canteen not owned by this owner")
+	}
+
+	err = m.menuRepository.DeleteMenu(tx, menuID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.DeleteMenuResponse{
+		MenuID:  menuID,
+		Message: "menu deleted successfully",
+	}
+
 	return response, nil
 }

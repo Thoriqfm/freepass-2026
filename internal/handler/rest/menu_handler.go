@@ -179,3 +179,44 @@ func (r *Rest) UpdateMenu(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, "menu updated successfully", resp)
 }
+
+func (r *Rest) DeleteMenu(c *gin.Context) {
+	owner, exists := c.Get("user")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	ownerEntity, ok := owner.(*entity.User)
+	if !ok {
+		response.Error(c, http.StatusInternalServerError, "failed to get owner session", nil)
+		return
+	}
+
+	menuID := c.Param("menu_id")
+	menuUUID, err := uuid.Parse(menuID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid menu ID", err)
+		return
+	}
+
+	resp, err := r.service.MenuService.DeleteMenu(ownerEntity.UserID, menuUUID)
+	if err != nil {
+		switch err.Error() {
+		case "menu not found":
+			response.Error(c, http.StatusNotFound, "menu not found", err)
+			return
+		case "canteen not found":
+			response.Error(c, http.StatusNotFound, "canteen not found", err)
+			return
+		case "access denied: canteen not owned by this owner":
+			response.Error(c, http.StatusForbidden, "canteen not owned by this owner", err)
+			return
+		default:
+			response.Error(c, http.StatusInternalServerError, "failed to delete menu", err)
+			return
+		}
+	}
+
+	response.Success(c, http.StatusOK, "menu deleted successfully", resp)
+}
