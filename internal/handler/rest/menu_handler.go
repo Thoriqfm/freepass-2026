@@ -131,3 +131,51 @@ func (r *Rest) GetMenuByMenuID(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, "menu detail retrieved successfully", resp)
 }
+
+func (r *Rest) UpdateMenu(c *gin.Context) {
+	owner, exists := c.Get("user")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	ownerEntity, ok := owner.(*entity.User)
+	if !ok {
+		response.Error(c, http.StatusInternalServerError, "failed to get owner session", nil)
+		return
+	}
+
+	menuID := c.Param("menu_id")
+	menuUUID, err := uuid.Parse(menuID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid menu ID", err)
+		return
+	}
+
+	var param model.UpdateMenuParam
+	err = c.ShouldBindJSON(&param)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	resp, err := r.service.MenuService.UpdateMenu(ownerEntity.UserID, menuUUID, param)
+	if err != nil {
+		switch err.Error() {
+		case "menu not found":
+			response.Error(c, http.StatusNotFound, "menu not found", err)
+			return
+		case "canteen not found":
+			response.Error(c, http.StatusNotFound, "canteen not found", err)
+			return
+		case "access denied: canteen not owned by this owner":
+			response.Error(c, http.StatusForbidden, "canteen not owned by this owner", err)
+			return
+		default:
+			response.Error(c, http.StatusInternalServerError, "failed to update menu", err)
+			return
+		}
+	}
+
+	response.Success(c, http.StatusOK, "menu updated successfully", resp)
+}

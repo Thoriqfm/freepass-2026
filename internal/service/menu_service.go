@@ -14,6 +14,7 @@ type IMenuService interface {
 	CreateMenu(ownerID uuid.UUID, canteenID uuid.UUID, param model.CreateMenuParam) error
 	GetMenusByCanteen(ownerID uuid.UUID, canteenID uuid.UUID) (*model.MenuListResponse, error)
 	GetMenuByMenuID(ownerID uuid.UUID, menuID uuid.UUID) (*model.MenuResponse, error)
+	UpdateMenu(ownerID uuid.UUID, menuID uuid.UUID, param model.UpdateMenuParam) (*model.UpdateMenuResponse, error)
 }
 
 type MenuService struct {
@@ -143,5 +144,71 @@ func (m *MenuService) GetMenuByMenuID(ownerID uuid.UUID, menuID uuid.UUID) (*mod
 		UpdatedAt:   menu.UpdatedAt,
 	}
 
+	return response, nil
+}
+
+func (m *MenuService) UpdateMenu(ownerID uuid.UUID, menuID uuid.UUID, param model.UpdateMenuParam) (*model.UpdateMenuResponse, error) {
+	tx := m.db.Begin()
+	defer tx.Rollback()
+
+	// get menu
+	menu, err := m.menuRepository.GetMenuByID(tx, menuID)
+	if err != nil {
+		return nil, errors.New("menu not found")
+	}
+
+	canteen, err := m.canteenRepository.GetCanteenByID(tx, menu.CanteenID)
+	if err != nil {
+		return nil, errors.New("canteen not found")
+	}
+
+	if canteen.OwnerID != ownerID {
+		return nil, errors.New("access denied: canteen not owned by this owner")
+	}
+
+	// update fields
+	if param.Name != "" {
+		menu.Name = param.Name
+	}
+	if param.Description != "" {
+		menu.Description = param.Description
+	}
+	if param.Price > 0 {
+		menu.Price = param.Price
+	}
+	if param.Stock >= 0 {
+		menu.Stock = param.Stock
+		// auto set by stock
+		if param.Stock == 0 {
+			menu.IsAvailable = false
+		} else if param.Stock > 0 {
+			if !menu.IsAvailable {
+				menu.IsAvailable = true
+			}
+		}
+	}
+	if param.IsAvailable != menu.IsAvailable {
+		menu.IsAvailable = param.IsAvailable
+	}
+
+	err = m.menuRepository.UpdateMenu(tx, menu)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+	response := &model.UpdateMenuResponse{
+		MenuID:      menu.MenuID,
+		CanteenID:   menu.CanteenID,
+		Name:        menu.Name,
+		Description: menu.Description,
+		Price:       menu.Price,
+		Stock:       menu.Stock,
+		IsAvailable: menu.IsAvailable,
+		UpdatedAt:   menu.UpdatedAt,
+	}
 	return response, nil
 }
