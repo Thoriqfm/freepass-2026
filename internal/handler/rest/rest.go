@@ -37,6 +37,10 @@ func (r *Rest) MountEndPoint() {
 	user.GET("/profile", r.GetUserProfile)
 	user.PUT("/profile/update", r.UpdateProfile)
 
+	admin := baseURL.Group("/admin")
+	admin.Use(r.middleware.AuthenticateUser, r.middleware.OnlyAdmin)
+	admin.POST("/create-canteen-owner", r.CreateCanteenOwner)
+
 }
 
 func (r *Rest) Run() {

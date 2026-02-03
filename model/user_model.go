@@ -17,9 +17,6 @@ type UserRegisterParam struct {
 	ConfirmPassword string `json:"confirm_password" binding:"required,min=8"`
 }
 
-type UserRegisterResponse struct {
-}
-
 type UserLoginParam struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -39,4 +36,23 @@ type UserProfile struct {
 type UpdateUserProfile struct {
 	Name  string `json:"name"`
 	Phone string `json:"phone"`
+}
+
+/*
+* ADMIN FEATURES
+ */
+
+type CreateCanteenOwnerParam struct {
+	Name            string `json:"name" binding:"required"`
+	Email           string `json:"email" binding:"required,email"`
+	Phone           string `json:"phone" binding:"required"`
+	Password        string `json:"password" binding:"required,min=8"`
+	ConfirmPassword string `json:"confirm_password" binding:"required,min=8"`
+}
+
+type UpdateCanteenOwnerProfile struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+	Password string `json:"password,omitempty"`
 }

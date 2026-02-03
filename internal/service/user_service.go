@@ -19,7 +19,10 @@ type IUserService interface {
 	Login(param model.UserLoginParam) (*model.UserLoginResponse, error)
 	GetUserProfile(userID uuid.UUID) (*model.UserProfile, error)
 	UpdateUserProfile(userId uuid.UUID, param model.UpdateUserProfile) (*model.UserProfile, error)
+	// ADMIN FEATURES
 	LoginAdmin(param model.UserLoginParam) (*model.UserLoginResponse, error)
+	CreateCanteenOwner(param model.CreateCanteenOwnerParam) error
+	// OWNER FEATURES
 	LoginOwner(param model.UserLoginParam) (*model.UserLoginResponse, error)
 }
 
@@ -203,6 +206,53 @@ func (u *UserService) LoginAdmin(param model.UserLoginParam) (*model.UserLoginRe
 	}
 
 	return response, nil
+}
+
+func (U *UserService) CreateCanteenOwner(param model.CreateCanteenOwnerParam) error {
+	tx := U.db.Begin()
+	defer tx.Rollback()
+
+	_, err := U.userRepository.GetUser(model.UserParam{
+		Email: param.Email,
+	})
+
+	if err == nil {
+		return errors.New("email already exists")
+	}
+
+	userID, err := uuid.NewUUID()
+	if err != nil {
+		return err
+	}
+
+	if param.Password != param.ConfirmPassword {
+		return errors.New("password not match")
+	}
+
+	hashPassword, err := U.bcrypt.GenerateFromPassword(param.Password)
+	if err != nil {
+		return err
+	}
+
+	user := &entity.User{
+		UserID:   userID,
+		RoleID:   3,
+		Name:     param.Name,
+		Email:    param.Email,
+		Phone:    param.Phone,
+		Password: hashPassword,
+	}
+
+	err = U.userRepository.CreateUser(tx, user)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 /*

@@ -20,7 +20,7 @@ func (r *Rest) RegisterHandler(c *gin.Context) {
 
 	err = r.service.UserService.Register(param)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, "failed to register user", err)
+		response.Error(c, http.StatusInternalServerError, "failed to register user", err)
 		return
 	}
 	response.Success(c, http.StatusOK, "success to register user", nil)
@@ -130,6 +130,23 @@ func (r *Rest) LoginAdmin(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "admin logged in successfully", reps)
+}
+
+func (r *Rest) CreateCanteenOwner(c *gin.Context) {
+	var param model.CreateCanteenOwnerParam
+
+	err := c.ShouldBindJSON(&param)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	err = r.service.UserService.CreateCanteenOwner(param)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "failed to create canteen owner", err)
+		return
+	}
+	response.Success(c, http.StatusOK, "canteen owner created successfully", nil)
 }
 
 /*
