@@ -1,6 +1,10 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type UserParam struct {
 	UserID uuid.UUID `json:"-"`
@@ -62,4 +66,10 @@ type UpdateCanteenOwnerResponse struct {
 	Name   string    `json:"name"`
 	Email  string    `json:"email"`
 	Phone  string    `json:"phone"`
+}
+
+type DeleteUserResponse struct {
+	Message   string    `json:"message"`
+	UserID    uuid.UUID `json:"user_id"`
+	DeletedAt time.Time `json:"deleted_at"`
 }

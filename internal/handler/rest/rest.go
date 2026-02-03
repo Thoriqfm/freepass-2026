@@ -41,6 +41,7 @@ func (r *Rest) MountEndPoint() {
 	admin.Use(r.middleware.AuthenticateUser, r.middleware.OnlyAdmin)
 	admin.POST("/create-canteen-owner", r.CreateCanteenOwner)
 	admin.PUT("/canteen-owner/:owner_id/update", r.UpdateCanteenOwnerProfile)
+	admin.DELETE("/delete-user/:user_id", r.DeleteUser)
 
 }
 

@@ -13,6 +13,7 @@ type IUserRepository interface {
 	GetUser(param model.UserParam) (*entity.User, error)
 	GetUserByID(tx *gorm.DB, id uuid.UUID) (*entity.User, error)
 	UpdateUserProfile(tx *gorm.DB, user *entity.User) error
+	DeleteUser(tx *gorm.DB, id uuid.UUID) error
 }
 
 type UserRepository struct {
@@ -57,5 +58,13 @@ func (r *UserRepository) UpdateUserProfile(tx *gorm.DB, user *entity.User) error
 		return err
 	}
 
+	return nil
+}
+
+func (r *UserRepository) DeleteUser(tx *gorm.DB, id uuid.UUID) error {
+	err := tx.Delete(&entity.User{}, id).Error
+	if err != nil {
+		return err
+	}
 	return nil
 }

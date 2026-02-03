@@ -8,6 +8,7 @@ import (
 	"freepass-2026/pkg/bcrypt"
 	"freepass-2026/pkg/database"
 	"freepass-2026/pkg/jwt"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -23,6 +24,7 @@ type IUserService interface {
 	LoginAdmin(param model.UserLoginParam) (*model.UserLoginResponse, error)
 	CreateCanteenOwner(param model.CreateCanteenOwnerParam) error
 	UpdateCanteenOwnerProfile(ownerID uuid.UUID, param model.UpdateCanteenOwnerProfile) (*model.UpdateCanteenOwnerResponse, error)
+	DeleteUser(adminID uuid.UUID, targetUserID uuid.UUID) (*model.DeleteUserResponse, error)
 	// OWNER FEATURES
 	LoginOwner(param model.UserLoginParam) (*model.UserLoginResponse, error)
 }
@@ -306,6 +308,53 @@ func (u *UserService) UpdateCanteenOwnerProfile(ownerID uuid.UUID, param model.U
 	}
 
 	return response, nil
+}
+
+func (u *UserService) DeleteUser(adminID uuid.UUID, targetUserID uuid.UUID) (*model.DeleteUserResponse, error) {
+	tx := u.db.Begin()
+	defer tx.Rollback()
+
+	// validate admin role
+	admin, err := u.userRepository.GetUserByID(tx, adminID)
+	if err != nil {
+		return nil, errors.New("admin not found")
+	}
+
+	if admin.RoleID != 1 {
+		return nil, errors.New("access denied: admin only")
+	}
+
+	// get target user
+	targetUser, err := u.userRepository.GetUserByID(tx, targetUserID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	if targetUser.RoleID == 3 {
+		if len(targetUser.CanteenOwner) > 0 { // check if owner has active canteens
+			return nil, errors.New("cannot delete canteen owner with active canteens")
+		}
+	}
+
+	// delete user
+	err = u.userRepository.DeleteUser(tx, targetUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.DeleteUserResponse{
+		Message:   "user deleted successfully",
+		UserID:    targetUserID,
+		DeletedAt: time.Now(),
+	}
+
+	return response, nil
+
 }
 
 /*

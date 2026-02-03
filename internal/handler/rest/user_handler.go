@@ -175,6 +175,48 @@ func (r *Rest) UpdateCanteenOwnerProfile(c *gin.Context) {
 	response.Success(c, http.StatusOK, "canteen owner profile updated successfully", reps)
 }
 
+func (r *Rest) DeleteUser(c *gin.Context) {
+	admin, exists := c.Get("user")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	adminEntity, ok := admin.(*entity.User)
+	if !ok {
+		response.Error(c, http.StatusInternalServerError, "failed to get admin session", nil)
+		return
+	}
+
+	targetUserID := c.Param("user_id")
+
+	targetUUID, err := uuid.Parse(targetUserID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid user ID", err)
+		return
+	}
+
+	reps, err := r.service.UserService.DeleteUser(adminEntity.UserID, targetUUID)
+	if err != nil {
+		switch err.Error() {
+		case "access denied: admin only":
+			response.Error(c, http.StatusForbidden, "access denied: admin only", err)
+			return
+		case "user not found":
+			response.Error(c, http.StatusNotFound, "user not found", err)
+			return
+		case "cannot delete canteen owner with active canteens":
+			response.Error(c, http.StatusConflict, "cannot delete canteen owner with active canteens", err)
+			return
+		default:
+			response.Error(c, http.StatusInternalServerError, "failed to delete user", err)
+			return
+		}
+	}
+
+	response.Success(c, http.StatusOK, "user deleted successfully", reps)
+}
+
 /*
 * OWNER FEATURES
  */
