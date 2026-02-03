@@ -40,6 +40,7 @@ func (r *Rest) MountEndPoint() {
 	admin := baseURL.Group("/admin")
 	admin.Use(r.middleware.AuthenticateUser, r.middleware.OnlyAdmin)
 	admin.POST("/create-canteen-owner", r.CreateCanteenOwner)
+	admin.PUT("/canteen-owner/:owner_id/update", r.UpdateCanteenOwnerProfile)
 
 }
 

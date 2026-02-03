@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (r *Rest) RegisterHandler(c *gin.Context) {
@@ -147,6 +148,31 @@ func (r *Rest) CreateCanteenOwner(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "canteen owner created successfully", nil)
+}
+
+func (r *Rest) UpdateCanteenOwnerProfile(c *gin.Context) {
+	ownerID := c.Param("owner_id")
+
+	ownerUUID, err := uuid.Parse(ownerID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid owner ID", err)
+		return
+	}
+
+	var param model.UpdateCanteenOwnerProfile
+	err = c.ShouldBindJSON(&param)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	reps, err := r.service.UserService.UpdateCanteenOwnerProfile(ownerUUID, param)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "failed to update canteen owner profile", err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "canteen owner profile updated successfully", reps)
 }
 
 /*

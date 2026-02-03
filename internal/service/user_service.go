@@ -22,6 +22,7 @@ type IUserService interface {
 	// ADMIN FEATURES
 	LoginAdmin(param model.UserLoginParam) (*model.UserLoginResponse, error)
 	CreateCanteenOwner(param model.CreateCanteenOwnerParam) error
+	UpdateCanteenOwnerProfile(ownerID uuid.UUID, param model.UpdateCanteenOwnerProfile) (*model.UpdateCanteenOwnerResponse, error)
 	// OWNER FEATURES
 	LoginOwner(param model.UserLoginParam) (*model.UserLoginResponse, error)
 }
@@ -253,6 +254,58 @@ func (U *UserService) CreateCanteenOwner(param model.CreateCanteenOwnerParam) er
 		return err
 	}
 	return nil
+}
+
+func (u *UserService) UpdateCanteenOwnerProfile(ownerID uuid.UUID, param model.UpdateCanteenOwnerProfile) (*model.UpdateCanteenOwnerResponse, error) {
+	tx := u.db.Begin()
+	defer tx.Rollback()
+
+	owner, err := u.userRepository.GetUserByID(tx, ownerID)
+	if err != nil {
+		return nil, errors.New("canteen owner not found")
+	}
+
+	// validate if user was canteen owner (role = 3)
+	if owner.RoleID != 3 {
+		return nil, errors.New("user is not a canteen owner")
+	}
+
+	// update fields
+	if param.Name != "" {
+		owner.Name = param.Name
+	}
+	if param.Email != "" {
+		owner.Email = param.Email
+	}
+	if param.Phone != "" {
+		owner.Phone = param.Phone
+	}
+	if param.Password != "" {
+		hashPassword, err := u.bcrypt.GenerateFromPassword(param.Password)
+		if err != nil {
+			return nil, err
+		}
+		owner.Password = hashPassword
+	}
+
+	err = u.userRepository.UpdateUserProfile(tx, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.UpdateCanteenOwnerResponse{
+		UserID: owner.UserID,
+		Name:   owner.Name,
+		Email:  owner.Email,
+		Phone:  owner.Phone,
+	}
+
+	return response, nil
 }
 
 /*

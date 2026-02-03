@@ -56,3 +56,10 @@ type UpdateCanteenOwnerProfile struct {
 	Phone    string `json:"phone"`
 	Password string `json:"password,omitempty"`
 }
+
+type UpdateCanteenOwnerResponse struct {
+	UserID uuid.UUID `json:"user_id"`
+	Name   string    `json:"name"`
+	Email  string    `json:"email"`
+	Phone  string    `json:"phone"`
+}
