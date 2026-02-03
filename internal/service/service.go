@@ -8,13 +8,15 @@ import (
 )
 
 type Service struct {
-	UserService IUserService
-	MenuService IMenuService
+	UserService    IUserService
+	MenuService    IMenuService
+	CanteenService ICanteenService
 }
 
 func NewService(repository *repository.Repository, bcrypt bcrypt.Interface, jwtAuth jwt.Interface) *Service {
 	return &Service{
-		UserService: NewUserService(repository.UserRepository, bcrypt, jwtAuth),
-		MenuService: NewMenuService(repository.MenuRepository, repository.CanteenRepository, database.Connection),
+		UserService:    NewUserService(repository.UserRepository, bcrypt, jwtAuth),
+		MenuService:    NewMenuService(repository.MenuRepository, repository.CanteenRepository, database.Connection),
+		CanteenService: NewCanteenService(repository.CanteenRepository, database.Connection),
 	}
 }
