@@ -45,6 +45,7 @@ func (r *Rest) MountEndPoint() {
 
 	owner := baseURL.Group("/owner")
 	owner.Use(r.middleware.AuthenticateUser, r.middleware.OnlyOwner)
+	owner.POST("/canteen/:canteen_id/create-menu", r.CreateMenu)
 
 }
 
