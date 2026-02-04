@@ -25,5 +25,15 @@ type CanteenListResponse struct {
 	Name     string `json:"name"`
 	Location string `json:"location"`
 	IsOpen   bool   `json:"is_open"`
-	// Canteens []CreateCanteenResponse `json:"canteens"`
+}
+
+type UpdateCantenStatusParam struct {
+	IsOpen bool `json:"is_open"`
+}
+
+type UpdateCanteenStatusResponse struct {
+	CanteenID uuid.UUID `json:"canteen_id"`
+	Name      string    `json:"name"`
+	IsOpen    bool      `json:"is_open"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

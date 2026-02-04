@@ -48,6 +48,7 @@ func (r *Rest) MountEndPoint() {
 	owner.Use(r.middleware.AuthenticateUser, r.middleware.OnlyOwner)
 	owner.POST("/canteen/create", r.CreateCanteen)
 	owner.POST("/canteen/:canteen_id/create-menu", r.CreateMenu)
+	owner.PUT("/canteen/:canteen_id/update-status", r.UpdateCanteenStatus)
 	owner.GET("/canteen/:canteen_id/menus", r.GetMenusByCanteen)
 	owner.GET("/menu/:menu_id", r.GetMenuByMenuID)
 	owner.PUT("/menu/:menu_id/update", r.UpdateMenu)

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"freepass-2026/entity"
 	"freepass-2026/internal/repository"
 	"freepass-2026/model"
@@ -12,6 +13,7 @@ import (
 type ICanteenService interface {
 	CreateCanteen(ownerID uuid.UUID, param model.CreateCanteenParam) (*model.CreateCanteenResponse, error)
 	GetAllCanteens() ([]model.CanteenListResponse, error)
+	UpdateCanteenStatus(ownerID uuid.UUID, canteenID uuid.UUID, param model.UpdateCantenStatusParam) (*model.UpdateCanteenStatusResponse, error)
 }
 
 type CanteenService struct {
@@ -84,4 +86,40 @@ func (c *CanteenService) GetAllCanteens() ([]model.CanteenListResponse, error) {
 	}
 
 	return responses, nil
+}
+
+func (c *CanteenService) UpdateCanteenStatus(ownerID uuid.UUID, canteenID uuid.UUID, param model.UpdateCantenStatusParam) (*model.UpdateCanteenStatusResponse, error) {
+	tx := c.db.Begin()
+	defer tx.Rollback()
+
+	canteen, err := c.canteenRepository.GetCanteenByID(tx, canteenID)
+	if err != nil {
+		return nil, errors.New("canteen not found")
+	}
+
+	if canteen.OwnerID != ownerID {
+		return nil, errors.New("access denied: canteen not owned by this owner")
+	}
+
+	// update status
+	canteen.IsOpen = param.IsOpen
+
+	err = c.canteenRepository.UpdateCanteenStatus(tx, canteen)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.UpdateCanteenStatusResponse{
+		CanteenID: canteen.CanteenID,
+		Name:      canteen.Name,
+		IsOpen:    canteen.IsOpen,
+		UpdatedAt: canteen.UpdatedAt,
+	}
+
+	return response, nil
 }
