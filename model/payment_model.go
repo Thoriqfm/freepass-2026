@@ -24,3 +24,16 @@ type PaymentListResponse struct {
 	Payments []CreatePaymentResponse `json:"payments"`
 	Total    int                     `json:"total"`
 }
+
+// /* For Owner: verify payment */
+// type VerifyPaymentParam struct {
+// 	PaymentID uuid.UUID `json:"payment_id" binding:"required"`
+// }
+
+// type VerifyPaymentResponse struct {
+// 	PaymentID uuid.UUID `json:"payment_id"`
+// 	OrderID   uuid.UUID `json:"order_id"`
+// 	Status    string    `json:"status"`
+// 	Message   string    `json:"message"`
+// 	UpdatedAt time.Time `json:"updated_at"`
+// }

@@ -58,7 +58,7 @@ func (p *PaymentService) CreatePayment(userID uuid.UUID, param model.CreatePayme
 		OrderID:       param.OrderID,
 		Amount:        order.TotalPrice,
 		PaymentMethod: param.PaymentMethod,
-		Status:        "pending",
+		Status:        "paid",
 		PaidAt:        order.CreatedAt,
 	}
 
@@ -67,7 +67,7 @@ func (p *PaymentService) CreatePayment(userID uuid.UUID, param model.CreatePayme
 		return nil, err
 	}
 
-	order.PaymentStatus = "pending"
+	order.PaymentStatus = "paid"
 	err = p.orderRepository.UpdateOrder(tx, order)
 	if err != nil {
 		return nil, err

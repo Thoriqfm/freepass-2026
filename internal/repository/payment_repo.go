@@ -25,3 +25,26 @@ func (r *PaymentRepository) CreatePayment(tx *gorm.DB, payment *entity.Payment) 
 	}
 	return nil
 }
+
+// func (r *PaymentRepository) GetPaymentByID(tx *gorm.DB, paymentID uuid.UUID) (*entity.Payment, error) {
+// 	var payment entity.Payment
+// 	err := tx.Debug().Where("payment_id = ?", paymentID).First(&payment).Error
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &payment, nil
+// }
+
+// func (r *PaymentRepository) GetPaymentByOrderID(tx *gorm.DB, orderID uuid.UUID) (*entity.Payment, error) {
+// 	var payment entity.Payment
+// 	err := tx.Debug().Where("order_id = ?", orderID).First(&payment).Error
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &payment, nil
+// }
+
+// func (r *PaymentRepository) GetUserPayments(tx *gorm.DB, userID uuid.UUID) ([]entity.Payment, error) {
+// 	var payments []entity.Payment
+
+// }
