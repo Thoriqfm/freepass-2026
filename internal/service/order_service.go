@@ -12,6 +12,9 @@ import (
 
 type IOrderService interface {
 	CreateOrder(userID uuid.UUID, param model.CreateOrderParam) (*model.CreateOrderResponse, error)
+	GetUserOrders(userID uuid.UUID) (*model.UserOrderListResponse, error)
+	GetOrderDetail(userID uuid.UUID, orderID uuid.UUID) (*model.OrderDetailResponse, error)
+	GetCanteenOrders(ownerID uuid.UUID, canteenID uuid.UUID) ([]entity.Order, error)
 }
 
 type OrderService struct {

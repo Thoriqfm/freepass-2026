@@ -45,14 +45,13 @@ type OrderDetailResponse struct {
 }
 
 type UserOrderResponse struct {
-	OrderID       uuid.UUID           `json:"order_id"`
-	CanteenID     uuid.UUID           `json:"canteen_id"`
-	TotalPrice    int                 `json:"total_price"`
-	PaymentStatus string              `json:"payment_status"`
-	OrderStatus   string              `json:"order_status"`
-	Items         []OrderItemResponse `json:"items"`
-	CreatedAt     time.Time           `json:"created_at"`
-	UpdatedAt     time.Time           `json:"updated_at"`
+	OrderID       uuid.UUID `json:"order_id"`
+	CanteenID     uuid.UUID `json:"canteen_id"`
+	TotalPrice    int       `json:"total_price"`
+	PaymentStatus string    `json:"payment_status"`
+	OrderStatus   string    `json:"order_status"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type UserOrderListResponse struct {
