@@ -10,6 +10,7 @@ import (
 type ICanteenRepository interface {
 	CreateCanteen(tx *gorm.DB, canteen *entity.Canteen) error
 	GetCanteenByID(tx *gorm.DB, canteenID uuid.UUID) (*entity.Canteen, error)
+	GetAllCanteens(tx *gorm.DB) ([]entity.Canteen, error)
 }
 
 type CanteenRepository struct {
@@ -35,4 +36,13 @@ func (r *CanteenRepository) GetCanteenByID(tx *gorm.DB, canteenID uuid.UUID) (*e
 		return nil, err
 	}
 	return &canteen, nil
+}
+
+func (r *CanteenRepository) GetAllCanteens(tx *gorm.DB) ([]entity.Canteen, error) {
+	var canteens []entity.Canteen
+	err := tx.Debug().Find(&canteens).Error
+	if err != nil {
+		return nil, err
+	}
+	return canteens, nil
 }

@@ -11,6 +11,7 @@ import (
 
 type ICanteenService interface {
 	CreateCanteen(ownerID uuid.UUID, param model.CreateCanteenParam) (*model.CreateCanteenResponse, error)
+	GetAllCanteens() ([]model.CanteenListResponse, error)
 }
 
 type CanteenService struct {
@@ -62,4 +63,25 @@ func (c *CanteenService) CreateCanteen(ownerID uuid.UUID, param model.CreateCant
 	}
 
 	return response, nil
+}
+
+func (c *CanteenService) GetAllCanteens() ([]model.CanteenListResponse, error) {
+	tx := c.db.Begin()
+	defer tx.Rollback()
+
+	canteens, err := c.canteenRepository.GetAllCanteens(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []model.CanteenListResponse
+	for _, canteen := range canteens {
+		responses = append(responses, model.CanteenListResponse{
+			Name:     canteen.Name,
+			Location: canteen.Location,
+			IsOpen:   canteen.IsOpen,
+		})
+	}
+
+	return responses, nil
 }

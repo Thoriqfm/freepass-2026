@@ -11,6 +11,7 @@ type IMenuRepository interface {
 	CreateMenu(tx *gorm.DB, menu *entity.Menu) error
 	GetMenuByCanteen(tx *gorm.DB, canteenID uuid.UUID) ([]entity.Menu, error)
 	GetMenuByID(tx *gorm.DB, menuID uuid.UUID) (*entity.Menu, error)
+	GetAllAvailableMenus(tx *gorm.DB) ([]entity.Menu, error)
 	UpdateMenu(tx *gorm.DB, menu *entity.Menu) error
 	DeleteMenu(tx *gorm.DB, menuID uuid.UUID) error
 }
@@ -47,6 +48,15 @@ func (r *MenuRepository) GetMenuByID(tx *gorm.DB, menuID uuid.UUID) (*entity.Men
 		return nil, err
 	}
 	return &menu, nil
+}
+
+func (r *MenuRepository) GetAllAvailableMenus(tx *gorm.DB) ([]entity.Menu, error) {
+	var menus []entity.Menu
+	err := tx.Debug().Where("is_available = ?", true).Find(&menus).Error
+	if err != nil {
+		return nil, err
+	}
+	return menus, nil
 }
 
 func (r *MenuRepository) UpdateMenu(tx *gorm.DB, menu *entity.Menu) error {

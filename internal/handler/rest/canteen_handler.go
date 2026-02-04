@@ -36,3 +36,12 @@ func (r *Rest) CreateCanteen(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, "canteen created successfully", resp)
 }
+
+func (r *Rest) GetAllCanteens(c *gin.Context) {
+	resp, err := r.service.CanteenService.GetAllCanteens()
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "failed to get canteens", err)
+		return
+	}
+	response.Success(c, http.StatusOK, "canteens retrieved successfully", resp)
+}

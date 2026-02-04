@@ -18,5 +18,12 @@ type CreateCanteenResponse struct {
 	Name      string    `json:"name"`
 	Location  string    `json:"location"`
 	IsOpen    bool      `json:"is_open"`
-	CreatedAt time.Time    `json:"created_at"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type CanteenListResponse struct {
+	Name     string `json:"name"`
+	Location string `json:"location"`
+	IsOpen   bool   `json:"is_open"`
+	// Canteens []CreateCanteenResponse `json:"canteens"`
 }

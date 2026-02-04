@@ -220,3 +220,29 @@ func (r *Rest) DeleteMenu(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, "menu deleted successfully", resp)
 }
+
+func (r *Rest) GetAllAvailableMenusByCanteen(c *gin.Context) {
+	canteenID := c.Param("canteen_id")
+	canteenUUID, err := uuid.Parse(canteenID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid canteen ID", err)
+		return
+	}
+
+	resp, err := r.service.MenuService.GetAllAvailableMenusByCanteen(canteenUUID)
+	if err != nil {
+		switch err.Error() {
+		case "canteen not found":
+			response.Error(c, http.StatusNotFound, "canteen not found", err)
+			return
+		case "canteen is closed":
+			response.Error(c, http.StatusForbidden, "canteen is closed", err)
+			return
+		default:
+			response.Error(c, http.StatusInternalServerError, "failed to get available menus", err)
+			return
+		}
+	}
+
+	response.Success(c, http.StatusOK, "menus retrieved successfully", resp)
+}

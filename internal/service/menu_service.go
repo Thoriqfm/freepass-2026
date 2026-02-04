@@ -14,6 +14,7 @@ type IMenuService interface {
 	CreateMenu(ownerID uuid.UUID, canteenID uuid.UUID, param model.CreateMenuParam) error
 	GetMenusByCanteen(ownerID uuid.UUID, canteenID uuid.UUID) (*model.MenuListResponse, error)
 	GetMenuByMenuID(ownerID uuid.UUID, menuID uuid.UUID) (*model.MenuResponse, error)
+	GetAllAvailableMenusByCanteen(canteenID uuid.UUID) (*model.MenuListResponse, error)
 	UpdateMenu(ownerID uuid.UUID, menuID uuid.UUID, param model.UpdateMenuParam) (*model.UpdateMenuResponse, error)
 	DeleteMenu(ownerID uuid.UUID, menuID uuid.UUID) (*model.DeleteMenuResponse, error)
 }
@@ -244,6 +245,64 @@ func (m *MenuService) DeleteMenu(ownerID uuid.UUID, menuID uuid.UUID) (*model.De
 	response := &model.DeleteMenuResponse{
 		MenuID:  menuID,
 		Message: "menu deleted successfully",
+	}
+
+	return response, nil
+}
+
+// for user to get canten menu
+
+// for users to get all available menu
+func (m *MenuService) GetAllAvailableMenusByCanteen(canteenID uuid.UUID) (*model.MenuListResponse, error) {
+	tx := m.db.Begin()
+	defer tx.Rollback()
+
+	canteen, err := m.canteenRepository.GetCanteenByID(tx, canteenID)
+	if err != nil {
+		return nil, errors.New("canteen not found")
+	}
+
+	if !canteen.IsOpen {
+		return nil, errors.New("canteen is closed")
+	}
+
+	// get available menus
+	menus, err := m.menuRepository.GetMenuByCanteen(tx, canteenID)
+	if err != nil {
+		return nil, err
+	}
+
+	// filter menu
+	var availableMenus []entity.Menu
+	for _, menu := range menus {
+		if menu.IsAvailable {
+			availableMenus = append(availableMenus, menu)
+		}
+	}
+
+	var menuResponses []model.MenuResponse
+	for _, menu := range availableMenus {
+		menuResponses = append(menuResponses, model.MenuResponse{
+			MenuID:      menu.MenuID,
+			CanteenID:   menu.CanteenID,
+			Name:        menu.Name,
+			Description: menu.Description,
+			Price:       menu.Price,
+			Stock:       menu.Stock,
+			IsAvailable: menu.IsAvailable,
+			CreatedAt:   menu.CreatedAt,
+			UpdatedAt:   menu.UpdatedAt,
+		})
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.MenuListResponse{
+		Menus: menuResponses,
+		Total: len(menuResponses),
 	}
 
 	return response, nil

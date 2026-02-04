@@ -36,6 +36,7 @@ func (r *Rest) MountEndPoint() {
 	user.Use(r.middleware.AuthenticateUser)
 	user.GET("/profile", r.GetUserProfile)
 	user.PUT("/profile/update", r.UpdateProfile)
+	user.GET("/canteen", r.GetAllCanteens)
 
 	admin := baseURL.Group("/admin")
 	admin.Use(r.middleware.AuthenticateUser, r.middleware.OnlyAdmin)
