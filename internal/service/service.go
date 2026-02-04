@@ -8,19 +8,21 @@ import (
 )
 
 type Service struct {
-	UserService    IUserService
-	MenuService    IMenuService
-	CanteenService ICanteenService
-	OrderService   IOrderService
-	PaymentService IPaymentService
+	UserService     IUserService
+	MenuService     IMenuService
+	CanteenService  ICanteenService
+	OrderService    IOrderService
+	PaymentService  IPaymentService
+	FeedbackService IFeedbackService
 }
 
 func NewService(repository *repository.Repository, bcrypt bcrypt.Interface, jwtAuth jwt.Interface) *Service {
 	return &Service{
-		UserService:    NewUserService(repository.UserRepository, bcrypt, jwtAuth),
-		MenuService:    NewMenuService(repository.MenuRepository, repository.CanteenRepository, database.Connection),
-		CanteenService: NewCanteenService(repository.CanteenRepository, database.Connection),
-		OrderService:   NewOrderService(repository.OrderRepository, repository.MenuRepository, repository.CanteenRepository, database.Connection),
-		PaymentService: NewPaymentService(database.Connection, repository.PaymentRepository, repository.OrderRepository, nil),
+		UserService:     NewUserService(repository.UserRepository, bcrypt, jwtAuth),
+		MenuService:     NewMenuService(repository.MenuRepository, repository.CanteenRepository, database.Connection),
+		CanteenService:  NewCanteenService(repository.CanteenRepository, database.Connection),
+		OrderService:    NewOrderService(repository.OrderRepository, repository.MenuRepository, repository.CanteenRepository, database.Connection),
+		PaymentService:  NewPaymentService(database.Connection, repository.PaymentRepository, repository.OrderRepository, nil),
+		FeedbackService: NewFeedbackService(repository.FeedbackRepository, repository.OrderRepository, repository.CanteenRepository, database.Connection),
 	}
 }
