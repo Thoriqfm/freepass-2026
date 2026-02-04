@@ -11,6 +11,7 @@ type Service struct {
 	UserService    IUserService
 	MenuService    IMenuService
 	CanteenService ICanteenService
+	OrderService   IOrderService
 }
 
 func NewService(repository *repository.Repository, bcrypt bcrypt.Interface, jwtAuth jwt.Interface) *Service {
@@ -18,5 +19,6 @@ func NewService(repository *repository.Repository, bcrypt bcrypt.Interface, jwtA
 		UserService:    NewUserService(repository.UserRepository, bcrypt, jwtAuth),
 		MenuService:    NewMenuService(repository.MenuRepository, repository.CanteenRepository, database.Connection),
 		CanteenService: NewCanteenService(repository.CanteenRepository, database.Connection),
+		OrderService:   NewOrderService(repository.OrderRepository, repository.MenuRepository, repository.CanteenRepository, database.Connection),
 	}
 }

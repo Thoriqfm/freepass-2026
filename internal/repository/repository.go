@@ -6,6 +6,7 @@ type Repository struct {
 	UserRepository    IUserRepository
 	MenuRepository    IMenuRepository
 	CanteenRepository ICanteenRepository
+	OrderRepository   IOrderRepository
 }
 
 func NewRepository(db *gorm.DB) *Repository {
@@ -13,5 +14,6 @@ func NewRepository(db *gorm.DB) *Repository {
 		UserRepository:    NewUserRepository(db),
 		MenuRepository:    NewMenuRepository(db),
 		CanteenRepository: NewCanteenRepository(db),
+		OrderRepository:   NewOrderRepository(db),
 	}
 }

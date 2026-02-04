@@ -38,6 +38,7 @@ func (r *Rest) MountEndPoint() {
 	user.PUT("/profile/update", r.UpdateProfile)
 	user.GET("/canteen", r.GetAllCanteens)
 	user.GET("/canteen/:canteen_id/menus", r.GetAllAvailableMenusByCanteen)
+	user.POST("/order/create", r.CreateOrder)
 
 	admin := baseURL.Group("/admin")
 	admin.Use(r.middleware.AuthenticateUser, r.middleware.OnlyAdmin)
