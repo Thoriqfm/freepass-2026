@@ -57,6 +57,7 @@ func (r *Rest) MountEndPoint() {
 	owner.GET("/menu/:menu_id", r.GetMenuByMenuID)
 	owner.PUT("/menu/:menu_id/update", r.UpdateMenu)
 	owner.DELETE("/menu/:menu_id/delete", r.DeleteMenu)
+	owner.PUT("/order/:order_id/update-status", r.UpdateOrderStatus)
 
 }
 

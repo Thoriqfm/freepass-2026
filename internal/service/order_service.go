@@ -15,6 +15,7 @@ type IOrderService interface {
 	GetUserOrders(userID uuid.UUID) (*model.UserOrderListResponse, error)
 	GetOrderDetail(userID uuid.UUID, orderID uuid.UUID) (*model.OrderDetailResponse, error)
 	GetCanteenOrders(ownerID uuid.UUID, canteenID uuid.UUID) ([]entity.Order, error)
+	UpdateOrderStatus(ownerID uuid.UUID, orderID uuid.UUID, newStatus string) (*model.OrderStatusResponse, error)
 }
 
 type OrderService struct {
@@ -256,4 +257,63 @@ func (o *OrderService) GetCanteenOrders(ownerID uuid.UUID, canteenID uuid.UUID) 
 	}
 
 	return orders, nil
+}
+
+/*
+* OWNER ONLY
+ */
+
+func (o *OrderService) UpdateOrderStatus(ownerID uuid.UUID, orderID uuid.UUID, newStatus string) (*model.OrderStatusResponse, error) {
+	tx := o.db.Begin()
+	defer tx.Rollback()
+
+	order, err := o.orderRepository.GetOrderByID(tx, orderID)
+	if err != nil {
+		return nil, errors.New("order not found")
+	}
+
+	canteen, err := o.canteenRepository.GetCanteenByID(tx, order.CanteenID)
+	if err != nil {
+		return nil, errors.New("canteen not found")
+	}
+
+	if canteen.OwnerID != ownerID {
+		return nil, errors.New("access denied: canteen not owned by this owner")
+	}
+
+	if order.PaymentStatus != "paid" {
+		return nil, errors.New("cannot update order status: payment not completed")
+	}
+
+	validStatuses := map[string]bool{
+		"pending":   true,
+		"cooking":   true,
+		"ready":     true,
+		"completed": true,
+	}
+
+	if !validStatuses[newStatus] {
+		return nil, errors.New("invalid order status")
+	}
+
+	order.OrderStatus = newStatus
+
+	err = o.orderRepository.UpdateOrder(tx, order)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.OrderStatusResponse{
+		OrderID:       order.OrderID,
+		PaymentStatus: order.PaymentStatus,
+		OrderStatus:   order.OrderStatus,
+		UpdatedAt:     order.UpdatedAt,
+	}
+
+	return response, nil
 }

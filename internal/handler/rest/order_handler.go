@@ -120,3 +120,64 @@ func (r *Rest) GetOrderDetail(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, "order detail retrieved successfully", resp)
 }
+
+/*
+* Owner handler
+ */
+
+func (r *Rest) UpdateOrderStatus(c *gin.Context) {
+	owner, exists := c.Get("user")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	ownerEntity, ok := owner.(*entity.User)
+	if !ok {
+		response.Error(c, http.StatusInternalServerError, "failed to get owner session", nil)
+		return
+	}
+
+	orderID := c.Param("order_id")
+	orderUUID, err := uuid.Parse(orderID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid order ID", err)
+		return
+	}
+
+	var param struct {
+		OrderStatus string `json:"order_status" binding:"required"`
+	}
+
+	err = c.ShouldBindJSON(&param)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	resp, err := r.service.OrderService.UpdateOrderStatus(ownerEntity.UserID, orderUUID, param.OrderStatus)
+	if err != nil {
+		switch err.Error() {
+		case "order not found":
+			response.Error(c, http.StatusNotFound, "order not found", err)
+			return
+		case "canteen not found":
+			response.Error(c, http.StatusNotFound, "canteen not found", err)
+			return
+		case "access denied: canteen not owned by this owner":
+			response.Error(c, http.StatusForbidden, "access denied", err)
+			return
+		case "cannot update order status: payment not yet received":
+			response.Error(c, http.StatusConflict, "payment not yet received", err)
+			return
+		case "invalid order status":
+			response.Error(c, http.StatusBadRequest, "invalid order status", err)
+			return
+		default:
+			response.Error(c, http.StatusInternalServerError, "failed to update order status", err)
+			return
+		}
+	}
+
+	response.Success(c, http.StatusOK, "order status updated successfully", resp)
+}
