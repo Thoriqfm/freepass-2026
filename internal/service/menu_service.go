@@ -14,7 +14,7 @@ type IMenuService interface {
 	CreateMenu(ownerID uuid.UUID, canteenID uuid.UUID, param model.CreateMenuParam) error
 	GetMenusByCanteen(ownerID uuid.UUID, canteenID uuid.UUID) (*model.MenuListResponse, error)
 	GetMenuByMenuID(ownerID uuid.UUID, menuID uuid.UUID) (*model.MenuResponse, error)
-	GetAllAvailableMenusByCanteen(canteenID uuid.UUID) (*model.MenuListResponse, error)
+	GetAllAvailableMenusByCanteen(canteenID uuid.UUID) (*model.UserMenuListResponse, error)
 	UpdateMenu(ownerID uuid.UUID, menuID uuid.UUID, param model.UpdateMenuParam) (*model.UpdateMenuResponse, error)
 	DeleteMenu(ownerID uuid.UUID, menuID uuid.UUID) (*model.DeleteMenuResponse, error)
 }
@@ -253,7 +253,7 @@ func (m *MenuService) DeleteMenu(ownerID uuid.UUID, menuID uuid.UUID) (*model.De
 // for user to get canten menu
 
 // for users to get all available menu
-func (m *MenuService) GetAllAvailableMenusByCanteen(canteenID uuid.UUID) (*model.MenuListResponse, error) {
+func (m *MenuService) GetAllAvailableMenusByCanteen(canteenID uuid.UUID) (*model.UserMenuListResponse, error) {
 	tx := m.db.Begin()
 	defer tx.Rollback()
 
@@ -280,18 +280,14 @@ func (m *MenuService) GetAllAvailableMenusByCanteen(canteenID uuid.UUID) (*model
 		}
 	}
 
-	var menuResponses []model.MenuResponse
+	var menuResponses []model.UserMenuResponse
 	for _, menu := range availableMenus {
-		menuResponses = append(menuResponses, model.MenuResponse{
-			MenuID:      menu.MenuID,
-			CanteenID:   menu.CanteenID,
+		menuResponses = append(menuResponses, model.UserMenuResponse{
 			Name:        menu.Name,
 			Description: menu.Description,
 			Price:       menu.Price,
 			Stock:       menu.Stock,
 			IsAvailable: menu.IsAvailable,
-			CreatedAt:   menu.CreatedAt,
-			UpdatedAt:   menu.UpdatedAt,
 		})
 	}
 
@@ -300,7 +296,7 @@ func (m *MenuService) GetAllAvailableMenusByCanteen(canteenID uuid.UUID) (*model
 		return nil, err
 	}
 
-	response := &model.MenuListResponse{
+	response := &model.UserMenuListResponse{
 		Menus: menuResponses,
 		Total: len(menuResponses),
 	}

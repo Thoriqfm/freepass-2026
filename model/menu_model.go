@@ -31,6 +31,19 @@ type MenuListResponse struct {
 	Total int            `json:"total"`
 }
 
+type UserMenuResponse struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Price       int    `json:"price"`
+	Stock       int    `json:"stock"`
+	IsAvailable bool   `json:"is_available"`
+}
+
+type UserMenuListResponse struct {
+	Menus []UserMenuResponse `json:"menus"`
+	Total int                `json:"total"`
+}
+
 type UpdateMenuParam struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
