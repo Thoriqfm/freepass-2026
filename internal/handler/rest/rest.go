@@ -41,6 +41,7 @@ func (r *Rest) MountEndPoint() {
 	user.POST("/order/create", r.CreateOrder)
 	user.GET("/orders", r.GetUserOrders)
 	user.GET("/order/:order_id", r.GetOrderDetail)
+	user.POST("/payment/create", r.CreatePayment)
 
 	admin := baseURL.Group("/admin")
 	admin.Use(r.middleware.AuthenticateUser, r.middleware.OnlyAdmin)
