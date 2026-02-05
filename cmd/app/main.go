@@ -4,6 +4,7 @@ import (
 	"freepass-2026/internal/handler/rest"
 	"freepass-2026/internal/repository"
 	"freepass-2026/internal/service"
+	"freepass-2026/pkg/background"
 	"freepass-2026/pkg/bcrypt"
 	"freepass-2026/pkg/config"
 	"freepass-2026/pkg/database"
@@ -29,6 +30,11 @@ func main() {
 	bcrypt := bcrypt.Init()
 	jwtAuth := jwt.Init()
 	svc := service.NewService(repo, bcrypt, jwtAuth)
+	// start cleanup job
+	cleanupJob := background.NewCleanupJob(svc.OrderService)
+	cleanupJob.Start()
+	defer cleanupJob.Stop()
+	// stop cleanup job on exit
 	middleware := middleware.Init(svc, jwtAuth)
 	r := rest.NewRest(svc, middleware)
 	r.MountEndPoint()

@@ -5,6 +5,7 @@ import (
 	"freepass-2026/entity"
 	"freepass-2026/internal/repository"
 	"freepass-2026/model"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ type IOrderService interface {
 	GetCanteenOrders(ownerID uuid.UUID, canteenID uuid.UUID) ([]entity.Order, error)
 	UpdateOrderStatus(ownerID uuid.UUID, orderID uuid.UUID, newStatus string) (*model.OrderStatusResponse, error)
 	GetOwnerAllOrders(ownerID uuid.UUID, queryParam model.OwnerOrderQueryParam) (*model.OwnerOrderListResponse, error)
+	CleanupCanceledOrders() error
 }
 
 type OrderService struct {
@@ -107,16 +109,6 @@ func (o *OrderService) CreateOrder(userID uuid.UUID, param model.CreateOrderPara
 			Subtotal: subtotal,
 		})
 
-		// update stock
-		// menu.Stock -= item.Quantity
-		// if menu.Stock == 0 {
-		// 	menu.IsAvailable = false
-		// }
-
-		// err = o.menuRepository.UpdateMenu(tx, menu)
-		// if err != nil {
-		// 	return nil, err
-		// }
 		if menu.Stock < item.Quantity {
 			return nil, errors.New("insufficient stock for menu: " + menu.Name)
 		}
@@ -150,6 +142,7 @@ func (o *OrderService) CreateOrder(userID uuid.UUID, param model.CreateOrderPara
 		return nil, err
 	}
 
+	// go rout : timer for autocancel
 	go o.startOrderTimer(orderID)
 	paymentDeadline := time.Now().Add(15 * time.Minute)
 	countdownMinutes := 15
@@ -456,4 +449,42 @@ func (o *OrderService) GetOwnerAllOrders(ownerID uuid.UUID, queryParam model.Own
 	}
 
 	return response, nil
+}
+
+func (o *OrderService) CleanupCanceledOrders() error {
+	tx := o.db.Begin()
+	defer tx.Rollback()
+
+	canceledOrders, err := o.orderRepository.GetCanceledOrders(tx)
+	if err != nil {
+		return errors.New("failed to get canceled orders")
+	}
+
+	if len(canceledOrders) == 0 {
+		log.Println("No canceled orders to cleanup")
+		return nil // no canceled orders to clean up
+	}
+
+	log.Printf("Found %d canceled orders to delete\n", len(canceledOrders))
+
+	for _, order := range canceledOrders {
+		// delete order items
+		if err := o.orderRepository.DeleteOrderItems(tx, order.OrderID); err != nil {
+			tx.Rollback()
+			return errors.New("failed to delete order items: " + err.Error())
+		}
+		// delete order
+		if err := o.orderRepository.DeleteOrder(tx, order.OrderID); err != nil {
+			tx.Rollback()
+			return errors.New("failed to delete order: " + err.Error())
+		}
+
+		log.Printf("Deleted canceled order: %s\n", order.OrderID.String())
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return err
+	}
+	return nil
 }

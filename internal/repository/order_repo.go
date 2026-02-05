@@ -17,6 +17,9 @@ type IOrderRepository interface {
 	UpdateOrder(tx *gorm.DB, order *entity.Order) error
 	GetOwnerAllOrders(tx *gorm.DB, ownerID uuid.UUID, status string, limit, offset int) ([]entity.Order, error)
 	CountOwnerAllOrders(tx *gorm.DB, ownerID uuid.UUID, status string) (int, error)
+	GetCanceledOrders(tx *gorm.DB) ([]entity.Order, error)
+	DeleteOrder(tx *gorm.DB, orderID uuid.UUID) error
+	DeleteOrderItems(tx *gorm.DB, orderID uuid.UUID) error
 }
 
 type OrderRepository struct {
@@ -130,4 +133,26 @@ func (r *OrderRepository) CountOwnerAllOrders(tx *gorm.DB, ownerID uuid.UUID, st
 		return 0, err
 	}
 	return int(count), nil
+}
+
+func (r *OrderRepository) GetCanceledOrders(tx *gorm.DB) ([]entity.Order, error) {
+	var orders []entity.Order
+	if err := tx.Where("order_status = ?", "canceled").Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+func (r *OrderRepository) DeleteOrder(tx *gorm.DB, orderID uuid.UUID) error {
+	if err := tx.Where("order_id = ?", orderID).Delete(&entity.Order{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *OrderRepository) DeleteOrderItems(tx *gorm.DB, orderID uuid.UUID) error {
+	if err := tx.Where("order_id = ?", orderID).Delete(&entity.OrderItem{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
