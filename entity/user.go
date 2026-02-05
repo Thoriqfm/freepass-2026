@@ -17,6 +17,5 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
 	CanteenOwner []Canteen  `json:"canteen_owner" gorm:"foreignKey:OwnerID"`
-	OrdersUser   []Order    `json:"orders_user" gorm:"foreignKey:UserID"`
 	Feedbacks    []Feedback `json:"feedbacks" gorm:"foreignKey:UserID"`
 }

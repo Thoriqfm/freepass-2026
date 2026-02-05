@@ -181,3 +181,31 @@ func (r *Rest) UpdateOrderStatus(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, "order status updated successfully", resp)
 }
+
+// GET /owner/orders
+func (r *Rest) GetOwnerAllOrders(c *gin.Context) {
+	// Get owner from context
+	ownerEntity, exists := c.Get("user")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	owner := ownerEntity.(*entity.User)
+
+	// Bind query parameters
+	var queryParam model.OwnerOrderQueryParam
+	if err := c.ShouldBindQuery(&queryParam); err != nil {
+		response.Error(c, http.StatusBadRequest, "failed to bind query parameters", err)
+		return
+	}
+
+	// Call service
+	resp, err := r.service.OrderService.GetOwnerAllOrders(owner.UserID, queryParam)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "failed to get all orders", err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "all orders retrieved successfully", resp)
+}

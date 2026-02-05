@@ -5,6 +5,7 @@ import (
 	"freepass-2026/entity"
 	"freepass-2026/internal/repository"
 	"freepass-2026/model"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -16,6 +17,7 @@ type IOrderService interface {
 	GetOrderDetail(userID uuid.UUID, orderID uuid.UUID) (*model.OrderDetailResponse, error)
 	GetCanteenOrders(ownerID uuid.UUID, canteenID uuid.UUID) ([]entity.Order, error)
 	UpdateOrderStatus(ownerID uuid.UUID, orderID uuid.UUID, newStatus string) (*model.OrderStatusResponse, error)
+	GetOwnerAllOrders(ownerID uuid.UUID, queryParam model.OwnerOrderQueryParam) (*model.OwnerOrderListResponse, error)
 }
 
 type OrderService struct {
@@ -23,14 +25,16 @@ type OrderService struct {
 	orderRepository   repository.IOrderRepository
 	menuRepository    repository.IMenuRepository
 	canteenRepository repository.ICanteenRepository
+	userRepository    repository.IUserRepository
 }
 
-func NewOrderService(orderRepository repository.IOrderRepository, menuRepository repository.IMenuRepository, canteenRepository repository.ICanteenRepository, db *gorm.DB) IOrderService {
+func NewOrderService(orderRepository repository.IOrderRepository, menuRepository repository.IMenuRepository, canteenRepository repository.ICanteenRepository, userRepository repository.IUserRepository, db *gorm.DB) IOrderService {
 	return &OrderService{
 		db:                db,
 		orderRepository:   orderRepository,
 		menuRepository:    menuRepository,
 		canteenRepository: canteenRepository,
+		userRepository:    userRepository,
 	}
 }
 
@@ -143,14 +147,23 @@ func (o *OrderService) CreateOrder(userID uuid.UUID, param model.CreateOrderPara
 		return nil, err
 	}
 
+	go o.startOrderTimer(orderID)
+
+	// Calculate payment deadline (30 minutes from now)
+	paymentDeadline := time.Now().Add(15 * time.Minute)
+	countdownMinutes := 15
+
 	response := &model.CreateOrderResponse{
-		OrderID:       order.OrderID,
-		CanteenID:     order.CanteenID,
-		TotalPrice:    order.TotalPrice,
-		PaymentStatus: order.PaymentStatus,
-		OrderStatus:   order.OrderStatus,
-		Items:         itemResponses,
-		CreatedAt:     order.CreatedAt,
+		OrderID:          order.OrderID,
+		CanteenID:        order.CanteenID,
+		TotalPrice:       order.TotalPrice,
+		PaymentStatus:    order.PaymentStatus,
+		OrderStatus:      order.OrderStatus,
+		Items:            itemResponses,
+		CreatedAt:        order.CreatedAt,
+		PaymentDeadline:  paymentDeadline,
+		CountdownMinutes: countdownMinutes,
+		Message:          "Please complete payment within 15 minutes or your order will be automatically cancelled",
 	}
 
 	return response, nil
@@ -313,6 +326,153 @@ func (o *OrderService) UpdateOrderStatus(ownerID uuid.UUID, orderID uuid.UUID, n
 		PaymentStatus: order.PaymentStatus,
 		OrderStatus:   order.OrderStatus,
 		UpdatedAt:     order.UpdatedAt,
+	}
+
+	return response, nil
+}
+
+// timer start 30 minute for user for auto cancel order if not paid
+func (o *OrderService) startOrderTimer(orderID uuid.UUID) {
+	time.Sleep(15 * time.Minute)
+
+	o.autoCancelOrder(orderID)
+}
+
+// auto cancel order
+func (o *OrderService) autoCancelOrder(orderID uuid.UUID) {
+	tx := o.db.Begin()
+	defer tx.Rollback()
+
+	order, err := o.orderRepository.GetOrderByID(tx, orderID)
+	if err != nil {
+		return // not found, skip
+	}
+
+	if order.PaymentStatus != "unpaid" {
+		return // already paid, skip
+	}
+
+	orderItems, err := o.orderRepository.GetOrderItems(tx, orderID)
+	if err != nil {
+		return
+	}
+
+	for _, item := range orderItems {
+		menu, err := o.menuRepository.GetMenuByID(tx, item.MenuID)
+		if err != nil {
+			continue
+			// skip if menu not found
+		}
+
+		menu.Stock += item.Quantity
+		menu.IsAvailable = true
+
+		o.menuRepository.UpdateMenu(tx, menu)
+	}
+
+	order.PaymentStatus = "canceled"
+	order.OrderStatus = "canceled"
+
+	err = o.orderRepository.UpdateOrder(tx, order)
+	if err != nil {
+		return
+	}
+
+	tx.Commit()
+}
+
+func (o *OrderService) GetOwnerAllOrders(ownerID uuid.UUID, queryParam model.OwnerOrderQueryParam) (*model.OwnerOrderListResponse, error) {
+	tx := o.db.Begin()
+	defer tx.Rollback()
+
+	// Set default values
+	if queryParam.Limit <= 0 {
+		queryParam.Limit = 50
+	}
+	if queryParam.Page <= 0 {
+		queryParam.Page = 1
+	}
+	if queryParam.Status == "" {
+		queryParam.Status = "all"
+	}
+
+	offset := (queryParam.Page - 1) * queryParam.Limit
+
+	// Get orders from all owner's canteens
+	orders, err := o.orderRepository.GetOwnerAllOrders(tx, ownerID, queryParam.Status, queryParam.Limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get total count
+	totalCount, err := o.orderRepository.CountOwnerAllOrders(tx, ownerID, queryParam.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform to response with canteen name
+	var orderResponses []model.OwnerOrderResponse
+	for _, order := range orders {
+		var itemResponses []model.OwnerOrderItemResponse
+		for _, item := range order.OrderItems {
+			// Get menu name manually since relation is removed
+			menu, _ := o.menuRepository.GetMenuByID(tx, item.MenuID)
+			menuName := ""
+			if menu != nil {
+				menuName = menu.Name
+			}
+
+			itemResponses = append(itemResponses, model.OwnerOrderItemResponse{
+				MenuID:   item.MenuID,
+				MenuName: menuName,
+				Quantity: item.Quantity,
+				Price:    item.Price,
+				Subtotal: item.Subtotal,
+			})
+		}
+
+		// Get canteen name
+		canteen, _ := o.canteenRepository.GetCanteenByID(tx, order.CanteenID)
+		canteenName := ""
+		if canteen != nil {
+			canteenName = canteen.Name
+		}
+
+		// Get user name and email manually since relation is removed
+		user, _ := o.userRepository.GetUserByID(tx, order.UserID)
+		userName := ""
+		userEmail := ""
+		if user != nil {
+			userName = user.Name
+			userEmail = user.Email
+		}
+
+		orderResponses = append(orderResponses, model.OwnerOrderResponse{
+			OrderID:       order.OrderID,
+			UserID:        order.UserID,
+			UserName:      userName,
+			UserEmail:     userEmail,
+			CanteenID:     order.CanteenID,
+			CanteenName:   canteenName,
+			TotalPrice:    order.TotalPrice,
+			PaymentStatus: order.PaymentStatus,
+			OrderStatus:   order.OrderStatus,
+			Items:         itemResponses,
+			CreatedAt:     order.CreatedAt,
+			UpdatedAt:     order.UpdatedAt,
+		})
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.OwnerOrderListResponse{
+		Orders:   orderResponses,
+		Total:    totalCount,
+		OwnerID:  ownerID,
+		FilterBy: queryParam.Status,
 	}
 
 	return response, nil

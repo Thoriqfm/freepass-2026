@@ -9,4 +9,7 @@ type OrderItem struct {
 	Quantity    int       `json:"quantity" gorm:"not null"`
 	Price       int       `json:"price" gorm:"not null"`
 	Subtotal    int       `json:"subtotal" gorm:"not null"`
+
+	// Menu  Menu  `json:"menu" gorm:"foreignKey:MenuID"`
+	// Order Order `json:"order" gorm:"foreignKey:OrderID"`
 }

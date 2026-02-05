@@ -17,12 +17,15 @@ type Service struct {
 }
 
 func NewService(repository *repository.Repository, bcrypt bcrypt.Interface, jwtAuth jwt.Interface) *Service {
+	// Create OrderService first
+	orderService := NewOrderService(repository.OrderRepository, repository.MenuRepository, repository.CanteenRepository, repository.UserRepository, database.Connection)
+
 	return &Service{
 		UserService:     NewUserService(repository.UserRepository, bcrypt, jwtAuth),
 		MenuService:     NewMenuService(repository.MenuRepository, repository.CanteenRepository, database.Connection),
 		CanteenService:  NewCanteenService(repository.CanteenRepository, database.Connection),
-		OrderService:    NewOrderService(repository.OrderRepository, repository.MenuRepository, repository.CanteenRepository, database.Connection),
-		PaymentService:  NewPaymentService(database.Connection, repository.PaymentRepository, repository.OrderRepository, nil),
+		OrderService:    orderService,
+		PaymentService:  NewPaymentService(database.Connection, repository.PaymentRepository, repository.OrderRepository, orderService),
 		FeedbackService: NewFeedbackService(repository.FeedbackRepository, repository.OrderRepository, repository.CanteenRepository, database.Connection),
 	}
 }
