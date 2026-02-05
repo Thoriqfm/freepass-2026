@@ -383,7 +383,7 @@ func (o *OrderService) GetOwnerAllOrders(ownerID uuid.UUID, queryParam model.Own
 
 	offset := (queryParam.Page - 1) * queryParam.Limit
 
-	// Get orders from all owner's canteens
+	// Get orders from all owner canteens
 	orders, err := o.orderRepository.GetOwnerAllOrders(tx, ownerID, queryParam.Status, queryParam.Limit, offset)
 	if err != nil {
 		return nil, err
@@ -400,7 +400,6 @@ func (o *OrderService) GetOwnerAllOrders(ownerID uuid.UUID, queryParam model.Own
 	for _, order := range orders {
 		var itemResponses []model.OwnerOrderItemResponse
 		for _, item := range order.OrderItems {
-			// Get menu name manually since relation is removed
 			menu, _ := o.menuRepository.GetMenuByID(tx, item.MenuID)
 			menuName := ""
 			if menu != nil {
@@ -423,7 +422,6 @@ func (o *OrderService) GetOwnerAllOrders(ownerID uuid.UUID, queryParam model.Own
 			canteenName = canteen.Name
 		}
 
-		// Get user name and email manually since relation is removed
 		user, _ := o.userRepository.GetUserByID(tx, order.UserID)
 		userName := ""
 		userEmail := ""
