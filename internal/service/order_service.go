@@ -151,8 +151,6 @@ func (o *OrderService) CreateOrder(userID uuid.UUID, param model.CreateOrderPara
 	}
 
 	go o.startOrderTimer(orderID)
-
-	// Calculate payment deadline (30 minutes from now)
 	paymentDeadline := time.Now().Add(15 * time.Minute)
 	countdownMinutes := 15
 
