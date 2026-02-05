@@ -55,7 +55,7 @@ func (p *PaymentService) CreatePayment(userID uuid.UUID, param model.CreatePayme
 
 	payment := &entity.Payment{
 		PaymentID:     paymentID,
-		OrderID:       param.OrderID,
+		OrderID:       order.OrderID,
 		Amount:        order.TotalPrice,
 		PaymentMethod: param.PaymentMethod,
 		Status:        "paid",

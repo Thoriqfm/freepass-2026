@@ -7,8 +7,8 @@ import (
 )
 
 type CreatePaymentParam struct {
-	OrderID       uuid.UUID `json:"order_id" binding:"required"`
-	PaymentMethod string    `json:"payment_method" binding:"required,oneof=credit_card bank_transfer e_wallet"`
+	OrderID       uuid.UUID `json:"order_id,omitempty"` // omitempty karena akan diisi dari URL
+	PaymentMethod string    `json:"payment_method" binding:"required"`
 }
 
 type CreatePaymentResponse struct {

@@ -41,7 +41,7 @@ func (r *Rest) MountEndPoint() {
 	user.POST("/order/create", r.CreateOrder)
 	user.GET("/orders", r.GetUserOrders)
 	user.GET("/order/:order_id", r.GetOrderDetail)
-	user.POST("/payment/create", r.CreatePayment)
+	user.POST("/order/:order_id/payment/create", r.CreatePayment)
 	user.POST("/feedback/order/create", r.CreateFeedback)
 
 	admin := baseURL.Group("/admin")

@@ -7,44 +7,38 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (r *Rest) CreatePayment(c *gin.Context) {
-	user, exists := c.Get("user")
+	userEntity, exists := c.Get("user")
 	if !exists {
 		response.Error(c, http.StatusUnauthorized, "unauthorized", nil)
 		return
 	}
 
-	userEntity, ok := user.(*entity.User)
-	if !ok {
-		response.Error(c, http.StatusInternalServerError, "failed to get user session", nil)
+	user := userEntity.(*entity.User)
+
+	orderIDStr := c.Param("order_id")
+	orderID, err := uuid.Parse(orderIDStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid order ID", err)
 		return
 	}
 
 	var param model.CreatePaymentParam
-	err := c.ShouldBindJSON(&param)
-	if err != nil {
+	if err := c.ShouldBindJSON(&param); err != nil {
 		response.Error(c, http.StatusBadRequest, "failed to bind json", err)
 		return
 	}
 
-	resp, err := r.service.PaymentService.CreatePayment(userEntity.UserID, param)
+	// Set OrderID dari URL parameter, bukan dari body
+	param.OrderID = orderID
+
+	resp, err := r.service.PaymentService.CreatePayment(user.UserID, param)
 	if err != nil {
-		switch err.Error() {
-		case "order not found":
-			response.Error(c, http.StatusNotFound, "order not found", err)
-			return
-		case "access denied: order does not belong to this user":
-			response.Error(c, http.StatusForbidden, "access denied", err)
-			return
-		case "order already paid":
-			response.Error(c, http.StatusConflict, "order already paid", err)
-			return
-		default:
-			response.Error(c, http.StatusInternalServerError, "failed to create payment", err)
-			return
-		}
+		response.Error(c, http.StatusInternalServerError, "failed to create payment", err)
+		return
 	}
 
 	response.Success(c, http.StatusOK, "payment created successfully", resp)
