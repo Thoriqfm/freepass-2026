@@ -469,10 +469,9 @@ func (o *OrderService) GetOwnerAllOrders(ownerID uuid.UUID, queryParam model.Own
 	}
 
 	response := &model.OwnerOrderListResponse{
-		Orders:   orderResponses,
-		Total:    totalCount,
-		OwnerID:  ownerID,
-		FilterBy: queryParam.Status,
+		Orders:  orderResponses,
+		Total:   totalCount,
+		OwnerID: ownerID,
 	}
 
 	return response, nil

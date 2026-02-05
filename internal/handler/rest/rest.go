@@ -61,6 +61,7 @@ func (r *Rest) MountEndPoint() {
 	owner.DELETE("/menu/:menu_id/delete", r.DeleteMenu)
 	owner.PUT("/order/:order_id/update-status", r.UpdateOrderStatus)
 	owner.GET("/orders", r.GetOwnerAllOrders)
+	owner.DELETE("/feedback/:feedback_id/delete", r.DeleteFeedback)
 
 }
 

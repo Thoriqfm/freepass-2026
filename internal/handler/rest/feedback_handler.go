@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (r *Rest) CreateFeedback(c *gin.Context) {
@@ -51,4 +52,28 @@ func (r *Rest) CreateFeedback(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "feedback created successfully", resp)
+}
+
+func (r *Rest) DeleteFeedback(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	owner := user.(*entity.User)
+	feedbackIDParam := c.Param("feedback_id")
+	feedbackID, err := uuid.Parse(feedbackIDParam)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid feedback ID", err)
+		return
+	}
+
+	resp, err := r.service.FeedbackService.DeleteFeedback(owner.UserID, feedbackID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "failed to remove feedback", err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "feedback removed successfully", resp)
 }

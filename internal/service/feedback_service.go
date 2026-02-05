@@ -5,6 +5,7 @@ import (
 	"freepass-2026/entity"
 	"freepass-2026/internal/repository"
 	"freepass-2026/model"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -12,6 +13,7 @@ import (
 
 type IFeedbackService interface {
 	CreateFeedback(userID uuid.UUID, param model.CreateFeedbackParam) (*model.FeedbackResponse, error)
+	DeleteFeedback(ownerID uuid.UUID, feedbackID uuid.UUID) (*model.DeleteFeedbackResponse, error)
 }
 
 type FeedbackService struct {
@@ -90,4 +92,46 @@ func (f *FeedbackService) CreateFeedback(userID uuid.UUID, param model.CreateFee
 
 	return response, nil
 
+}
+
+func (f *FeedbackService) DeleteFeedback(ownerID uuid.UUID, feedbackID uuid.UUID) (*model.DeleteFeedbackResponse, error) {
+	tx := f.db.Begin()
+	defer tx.Rollback()
+
+	feedback, err := f.feedbackRepository.GetFeedbackByID(tx, feedbackID)
+	if err != nil {
+		return nil, errors.New("feedback not found")
+	}
+
+	order, err := f.orderRepository.GetOrderByID(tx, feedback.OrderID)
+	if err != nil {
+		return nil, errors.New("order not found")
+	}
+
+	canteen, err := f.canteenRepository.GetCanteenByID(tx, order.CanteenID)
+	if err != nil {
+		return nil, errors.New("canteen not found")
+	}
+
+	if canteen.OwnerID != ownerID {
+		return nil, errors.New("access denied: canteen not owned by this owner")
+	}
+
+	err = f.feedbackRepository.DeleteFeedback(tx, feedbackID)
+	if err != nil {
+		return nil, errors.New("failed to delete feedback")
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.DeleteFeedbackResponse{
+		FeedbackID: feedbackID,
+		Message:    "feedback deleted successfully",
+		DeletedAt:  time.Now(),
+	}
+
+	return response, nil
 }

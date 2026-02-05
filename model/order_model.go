@@ -94,16 +94,13 @@ type OwnerOrderItemResponse struct {
 }
 
 type OwnerOrderListResponse struct {
-	Orders   []OwnerOrderResponse `json:"orders"`
-	Total    int                  `json:"total"`
-	OwnerID  uuid.UUID            `json:"owner_id"`
-	FilterBy string               `json:"filter_by,omitempty"`
+	Orders  []OwnerOrderResponse `json:"orders"`
+	Total   int                  `json:"total"`
+	OwnerID uuid.UUID            `json:"owner_id"`
 }
 
-// query param for filter
-// Query parameters untuk filter orders
 type OwnerOrderQueryParam struct {
-	Status string `form:"status"` // pending, confirmed, completed, canceled, all
-	Limit  int    `form:"limit"`  // default 50
-	Page   int    `form:"page"`   // default 1
+	Status string `form:"status"`
+	Limit  int    `form:"limit"`
+	Page   int    `form:"page"`
 }

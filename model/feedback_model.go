@@ -41,3 +41,9 @@ type CanteenFeedbackListResponse struct {
 	Average   float64                   `json:"average_rating"`
 	Total     int                       `json:"total"`
 }
+
+type DeleteFeedbackResponse struct {
+	FeedbackID uuid.UUID `json:"feedback_id"`
+	Message    string    `json:"message"`
+	DeletedAt  time.Time `json:"deleted_at"`
+}
