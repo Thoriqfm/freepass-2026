@@ -155,6 +155,35 @@ The implementation of this project MUST be in the form of a REST, gRPC, or Graph
 ## **🧪** API Installation
 
 > Write how to run your service in a local or development environment here. If you use Docker to serve your DBMS or your server, you will receive bonus points for your submission.
+> 
+> Ensure you have the following installed on your computer:
+> 1. Go
+> 2. Gin Framework
+> 3. Gorm Framework
+> 4. MariaDB
+>
+> Step:
+> 1. Make sure your MariaDB/MySQL is configured correctly
+> 2. Clone this repository
+> 3. Navigate to the project directory
+>    
+> ```
+> cd freepass-2026
+> ```
+>
+> 4. Install Gin and Gorm Framwork
+>
+> ```
+> go get -u github.com/gin-gonic/gin
+> go get -u gorm.io/gorm
+> ```
+>
+> 5. Configure your credentials and database settings in the .env file
+> 6. Start the application
+>
+> ```
+> go run .\cmd\app\main.go
+> ```
 
 ## **📞** Contact
 
