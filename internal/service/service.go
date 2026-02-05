@@ -25,7 +25,7 @@ func NewService(repository *repository.Repository, bcrypt bcrypt.Interface, jwtA
 		MenuService:     NewMenuService(repository.MenuRepository, repository.CanteenRepository, database.Connection),
 		CanteenService:  NewCanteenService(repository.CanteenRepository, database.Connection),
 		OrderService:    orderService,
-		PaymentService:  NewPaymentService(database.Connection, repository.PaymentRepository, repository.OrderRepository, orderService),
+		PaymentService:  NewPaymentService(database.Connection, repository.PaymentRepository, repository.OrderRepository, repository.MenuRepository, orderService),
 		FeedbackService: NewFeedbackService(repository.FeedbackRepository, repository.OrderRepository, repository.CanteenRepository, database.Connection),
 	}
 }

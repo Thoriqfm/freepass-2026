@@ -108,14 +108,17 @@ func (o *OrderService) CreateOrder(userID uuid.UUID, param model.CreateOrderPara
 		})
 
 		// update stock
-		menu.Stock -= item.Quantity
-		if menu.Stock == 0 {
-			menu.IsAvailable = false
-		}
+		// menu.Stock -= item.Quantity
+		// if menu.Stock == 0 {
+		// 	menu.IsAvailable = false
+		// }
 
-		err = o.menuRepository.UpdateMenu(tx, menu)
-		if err != nil {
-			return nil, err
+		// err = o.menuRepository.UpdateMenu(tx, menu)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		if menu.Stock < item.Quantity {
+			return nil, errors.New("insufficient stock for menu: " + menu.Name)
 		}
 	}
 
@@ -350,24 +353,6 @@ func (o *OrderService) autoCancelOrder(orderID uuid.UUID) {
 
 	if order.PaymentStatus != "unpaid" {
 		return // already paid, skip
-	}
-
-	orderItems, err := o.orderRepository.GetOrderItems(tx, orderID)
-	if err != nil {
-		return
-	}
-
-	for _, item := range orderItems {
-		menu, err := o.menuRepository.GetMenuByID(tx, item.MenuID)
-		if err != nil {
-			continue
-			// skip if menu not found
-		}
-
-		menu.Stock += item.Quantity
-		menu.IsAvailable = true
-
-		o.menuRepository.UpdateMenu(tx, menu)
 	}
 
 	order.PaymentStatus = "canceled"

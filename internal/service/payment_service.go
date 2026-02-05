@@ -5,6 +5,7 @@ import (
 	"freepass-2026/entity"
 	"freepass-2026/internal/repository"
 	"freepass-2026/model"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,14 +19,16 @@ type PaymentService struct {
 	db                *gorm.DB
 	paymentRepository repository.IPaymentRepository
 	orderRepository   repository.IOrderRepository
+	menuRepository    repository.IMenuRepository
 	orderService      IOrderService
 }
 
-func NewPaymentService(db *gorm.DB, paymentRepository repository.IPaymentRepository, orderRepository repository.IOrderRepository, orderService IOrderService) IPaymentService {
+func NewPaymentService(db *gorm.DB, paymentRepository repository.IPaymentRepository, orderRepository repository.IOrderRepository, menuRepository repository.IMenuRepository, orderService IOrderService) IPaymentService {
 	return &PaymentService{
 		db:                db,
 		paymentRepository: paymentRepository,
 		orderRepository:   orderRepository,
+		menuRepository:    menuRepository,
 		orderService:      orderService,
 	}
 }
@@ -43,9 +46,40 @@ func (p *PaymentService) CreatePayment(userID uuid.UUID, param model.CreatePayme
 		return nil, errors.New("access denied: order not owned by this user")
 	}
 
-	// validate order
 	if order.PaymentStatus == "paid" {
 		return nil, errors.New("order already paid")
+	}
+
+	// validate stock
+	orderItems, err := p.orderRepository.GetOrderItems(tx, param.OrderID)
+	if err != nil {
+		return nil, errors.New("failed to get order items")
+	}
+
+	for _, item := range orderItems {
+		menu, err := p.menuRepository.GetMenuByID(tx, item.MenuID)
+		if err != nil {
+			return nil, errors.New("menu not found: " + item.MenuID.String())
+		}
+
+		if menu.Stock < item.Quantity {
+			return nil, errors.New("insufficient stock for menu: " + menu.Name)
+		}
+	}
+
+	// reduce stock after validation
+	for _, item := range orderItems {
+		menu, _ := p.menuRepository.GetMenuByID(tx, item.MenuID)
+
+		menu.Stock -= item.Quantity
+		if menu.Stock == 0 {
+			menu.IsAvailable = false
+		}
+
+		err = p.menuRepository.UpdateMenu(tx, menu)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	paymentID, err := uuid.NewUUID()
@@ -59,7 +93,7 @@ func (p *PaymentService) CreatePayment(userID uuid.UUID, param model.CreatePayme
 		Amount:        order.TotalPrice,
 		PaymentMethod: param.PaymentMethod,
 		Status:        "paid",
-		PaidAt:        order.CreatedAt,
+		PaidAt:        time.Now(),
 	}
 
 	err = p.paymentRepository.CreatePayment(tx, payment)
